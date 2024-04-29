@@ -33,7 +33,7 @@ class Document {
         this.data.splice(index + 1, 0, {char: char, pos: newPos, deleteFlag: false});
         
 
-        this.operations.push({char: char, position: position, operation: 'insert'});
+        this.operations.push({char: char, position: position, newPos: newPos, userindex: this.users.indexOf(ws), operation: 'insert'});
         console.log(JSON.stringify(this.operations));
         return 1 //, index; // Return the cursor shift
     }
