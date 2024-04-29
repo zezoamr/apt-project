@@ -1,0 +1,208 @@
+text editor using ot (operational transform) method
+
+2 clients connect to websocket room, server has an empty document or one loaded from database
+
+document is in form of class
+class contains array of object datastructure
+object consists of char, pos
+
+users send operations to server of insert, delete
+insert and delete consist of set of chars, position to be inserted
+server applies transformation to the document it has by unpacking set of characters applying operation on each, then sends document alongside cursor shift
+(unpacking so modification can happen between set of chars, cursor shift is for the frontend so user would maintain same position in document)
+
+
+how pos works inside document class for each datastructure is that there is start and end tokens preinserted into each document that can't be deleted and have position
+of 0 and 100000000 and with each insertion between each two letters the server insert at midpoint pos value wise, with first user adding a 0.0001 and second user 
+adding 0.00002 that way server can handle race conditions prefering first user over second
+
+
+----
+const WebSocket = require('ws');
+
+class Document {
+    constructor() {
+        this.data = [{char: 'start', pos: 0}, {char: 'end', pos: 100000000}]; //add take doc from database (add load save event with id param or have it be based on key from java server?)
+        this.users = [];
+    }
+
+    insert(chars, pos, ws) {
+        
+        let index = this.data.findIndex(item => item.pos > pos);  
+        for (let char of chars) {
+            let newPos = (this.data[index-1].pos + this.data[index].pos) / 2;
+            newPos += this.users.indexOf(ws) === 0 ? 0.0001 : 0.00002;
+            this.data.splice(index++, 0, {char, pos: newPos});
+        }
+        return chars.length; // Return the cursor shift
+    }
+
+    delete(pos, length) {
+        
+        let index = this.data.findIndex(item => item.pos === pos);  
+        if (index <= this.data.length() - 1) {
+            this.data.splice(index, length);
+        }
+        return length; // Return the cursor shift
+    }
+
+    toText() {
+        // Exclude the start and end tokens when joining the characters into a string
+        return this.data.slice(1, -1).map(item => item.char).join('');
+    }
+
+    fromText(text) {
+        this.data = [{char: 'start', pos: 0}, {char: 'end', pos: 100000000}];
+        for (let char of text) {
+            let index = this.data.findIndex(item => item.pos > 0);
+            let newPos = (this.data[index-1].pos + this.data[index].pos) / 2;
+            this.data.splice(index, 0, {char, pos: newPos});
+        }
+    }
+
+}
+
+const wss = new WebSocket.Server({ port: 8080 });
+let rooms = {};
+
+wss.on('connection', ws => {
+    ws.on('message', message => {
+        let operation = JSON.parse(message);
+        let doc = rooms[operation.room] || new Document(); //have java auth server send key/ pass to user so they can use it here instead of adding auth here??
+        let cursorShift = 0;
+        if (operation.type === 'join') {
+            rooms[operation.room] = doc;
+            doc.users.push(ws);
+        } else if (operation.type === 'leave') {
+            let index = doc.users.indexOf(ws);
+            if (index !== -1) {
+                doc.users.splice(index, 1);
+            }
+            if (doc.users.length === 0) {
+                delete rooms[operation.room];
+            }
+        } else if (operation.type === 'insert') {
+            cursorShift = doc.insert(operation.chars, operation.pos, ws);
+        } else if (operation.type === 'delete') {
+            cursorShift = doc.delete(operation.pos, operation.length);
+        }
+
+        // Broadcast the updated document and cursor shift to all connected clients
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({data: doc.data, cursorShift}));
+            }
+        });
+    });
+});
+
+----
+
+const ws = new WebSocket('ws://localhost:8080');
+
+ws.onopen = () => {
+    console.log('Connected to the server');
+
+    // Join a room
+    ws.send(JSON.stringify({type: 'join', room: 'room1'}));
+
+    // Insert some text
+    ws.send(JSON.stringify({type: 'insert', chars: 'Hello, world!', pos: 1}));
+
+    // Delete some text
+    ws.send(JSON.stringify({type: 'delete', pos: 1, length: 5}));
+};
+
+ws.onmessage = (event) => {
+    let response = JSON.parse(event.data);
+
+    // Convert the document data structure to text
+    let text = response.data.slice(1, -1).map(item => item.char).join('');
+
+    console.log('Updated document:', text);
+    console.log('Cursor shift:', response.cursorShift);
+};
+
+ws.onclose = () => {
+    console.log('Disconnected from the server');
+};
+
+// To leave a room
+// ws.send(JSON.stringify({type: 'leave'}));
+----
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Text Editor</title>
+    <style>
+        #editor {
+            border: 1px solid black;
+            padding: 10px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="editor" contenteditable="true"></div>
+    <script>
+        const ws = new WebSocket('ws://localhost:8080');
+        let timeoutId;
+        let previousText = '';
+
+        ws.onopen = () => {
+            console.log('Connected to the server');
+            ws.send(JSON.stringify({type: 'join', room: 'room1'}));
+        };
+
+        ws.onmessage = (event) => {
+            let response = JSON.parse(event.data);
+            let text = response.data.slice(1, -1).map(item => item.char).join('');
+            console.log('Updated document:', text);
+            console.log('Cursor shift:', response.cursorShift);
+
+            // Adjust the cursor position
+            let cursorPos = window.getSelection().getRangeAt(0).startOffset;
+            cursorPos += response.cursorShift;
+            let range = document.createRange();
+            let sel = window.getSelection();
+            range.setStart(document.getElementById('editor').childNodes[0], cursorPos);
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        };
+
+        ws.onclose = () => {
+            console.log('Disconnected from the server');
+        };
+
+        document.getElementById('editor').addEventListener('input', (event) => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                let text = event.target.textContent;
+                let startPos = 0;                              //needs to be adjusted either here or on the server
+                while (startPos < text.length && text[startPos] === previousText[startPos]) {
+                    startPos++;
+                }
+                let endPos = text.length - 1;
+                let prevEndPos = previousText.length - 1;
+                while (endPos >= startPos && prevEndPos >= startPos && text[endPos] === previousText[prevEndPos]) {
+                    endPos--;
+                    prevEndPos--;
+                }
+                let deletedLength = prevEndPos - startPos + 1;
+                let insertedText = text.slice(startPos, endPos + 1);
+                if (deletedLength > 0) {
+                    ws.send(JSON.stringify({type: 'delete', pos: startPos + 1, length: deletedLength}));
+                }
+                if (insertedText.length > 0) {
+                    ws.send(JSON.stringify({type: 'insert', chars: insertedText, pos: startPos + 1}));
+                }
+                previousText = text;
+            }, 500); // Debounce time is 500ms
+        });
+    </script>
+</body>
+</html>
+
+
