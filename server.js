@@ -1,23 +1,15 @@
-// server.js
+
 const WebSocket = require('ws');
 
 class Document {
-    constructor() {
+    constructor(users) {
         this.data = [{char: '', pos: 0, deleteFlag: false}, {char: '', pos: 1000000, deleteFlag: false}]; // Start token
-        this.users = [];
+        this.users = users //|| [];
         this.operations=[];
+        this.last_operations = [];
     }
 
     insert(char, position, ws) {
-        // console.log(
-        //     "-----------items--------" 
-        // )
-        // for (let item of this.data) {
-        //     console.log(item.pos + " index " + this.data.indexOf(item) + " char " + item.char);
-        // }
-        // console.log(
-        //     "------------------------"
-        // )
 
         //console.log("insert pos " + pos);
         let index = this.data.findIndex(item => item.pos >= position);
@@ -34,7 +26,9 @@ class Document {
         
 
         this.operations.push({char: char, position: position, newPos: newPos, userindex: this.users.indexOf(ws), operation: 'insert'});
-        console.log(JSON.stringify(this.operations));
+        //console.log(JSON.stringify(this.operations));
+        //error here:
+        console.log("user index " + this.users.indexOf(ws));
         return 1 //, index; // Return the cursor shift
     }
     
@@ -53,6 +47,67 @@ class Document {
         return -1// , index; // Return the cursor shift, negative cursor shift to move the cursor to the left
     }
 
+
+    undo() {
+        if (this.operations.length === 0) {
+            return;
+        }
+
+        // Create a copy of the base document data
+        const undoData = [{char: '', pos: 0, deleteFlag: false}, {char: '', pos: 1000000, deleteFlag: false}];
+
+        // Apply all operations except the last one
+        for (let i = 0; i < this.operations.length ; i++) { 
+            const op = this.operations[i];
+            if (op.operation === 'insert') {
+                this.undo_redo_insert(op.char, op.newPos, undoData);
+            } else if (op.operation === 'delete') {
+                this.undo_redo_delete(op.pos, op.length, undoData);
+            }
+        }
+
+        this.last_operations.unshift( this.operations[this.operations.length - 1]); 
+
+        // Update the operations array with the new state
+        this.operations = this.operations.slice(0, -1);
+
+        this.data = undoData;
+    }
+
+    redo(){
+        if (this.last_operations.length === 0) {
+            return;
+        }
+        let last_operation = this.last_operations.shift();
+        //console.log("here " + JSON.stringify(this.last_operation))
+
+        if (last_operation) {
+            
+            if (last_operation.operation === 'insert') {
+                this.undo_redo_insert(last_operation.char, last_operation.newPos, this.data);
+            } else if (this.last_operation.operation === 'delete') {
+                this.undo_redo_delete(last_operation.pos, last_operation.length, this.data);
+            }
+            this.operations.push(last_operation);
+        }
+        //console.log("redo data after" + JSON.stringify(this.data))
+        
+        
+    }
+
+    undo_redo_insert(char, newPos,  baseData) {
+        baseData.push({ char: char, pos: newPos, deleteFlag: false });
+    }
+
+    undo_redo_delete(pos, length, baseData) {
+        let index = this.data.findIndex(item => item.pos === pos);
+        if (index === -1) {
+            return 0;
+            
+        }
+        baseData.splice(index, length);
+    }
+
     toText() {
         // Exclude the start token when joining the characters into a string
         return this.data.slice(1).map(item => item.char).join('');
@@ -67,27 +122,36 @@ wss.on('connection', ws => {
     ws.on('message', message => {
         let operation = JSON.parse(message);
         if (!rooms[operation.room]) {
-            rooms[operation.room] = new Document();
+            rooms[operation.room] = {
+                doc: new Document([]), 
+                users: []
+            };
         }
-        let doc = rooms[operation.room];
-        //let doc = rooms[operation.room] || new Document();
+        let room = rooms[operation.room];
+        let doc = room.doc;
         let cursorShift = 0;
-        let updateindex = 0;
         if (operation.type === 'join') {
-            rooms[operation.room] = doc;
-            doc.users.push(ws);
+            room.users.push(ws);
+            doc.users = room.users; 
         } else if (operation.type === 'leave') {
-            let index = doc.users.indexOf(ws);
+            let index = room.users.indexOf(ws);
             if (index !== -1) {
-                doc.users.splice(index, 1);
+                room.users.splice(index, 1);
             }
-            if (doc.users.length === 0) {
+            doc.users = room.users; 
+            if (room.users.length === 0) {
                 delete rooms[operation.room];
             }
         } else if (operation.type === 'insert') {
             cursorShift = doc.insert(operation.chars, operation.pos, ws);
         } else if (operation.type === 'delete') {
             cursorShift = doc.delete(operation.pos, operation.length);
+        } else if (operation.type === 'undo') {
+            doc.undo();
+            cursorShift = 0;
+        } else if (operation.type === 'redo') {
+            doc.redo();
+            cursorShift = 0;
         }
 
         // Broadcast the updated document and cursor shift to all connected clients
