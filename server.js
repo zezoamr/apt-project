@@ -29,6 +29,7 @@ class Document {
         //console.log(JSON.stringify(this.operations));
         //error here:
         console.log("user index " + this.users.indexOf(ws));
+        this.last_operations = []; //clear last operations because new operation means redo is gone
         return 1 //, index; // Return the cursor shift
     }
     
@@ -44,6 +45,7 @@ class Document {
         //console.log("delete " + JSON.stringify(this.data));
 
         this.operations.push({char: char, position: position, operation: 'delete'});
+        this.last_operations = []; //clear last operations because new operation means redo is gone
         return -1// , index; // Return the cursor shift, negative cursor shift to move the cursor to the left
     }
 
