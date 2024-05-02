@@ -44,16 +44,20 @@ let docData = [{char: '', pos: 0}, {char: '', pos: 100000000}];
 let updateQueue = [];
 let isUpdating = false;
 //let lastcursorPos = 0;
+
+let id = 'id' + Math.random().toString(36).substr(2, 9);
+
 ws.onopen = () => {
     console.log('Connected to the server');
-    ws.send(JSON.stringify({type: 'join', room: 'room1'}));
+    ws.send(JSON.stringify({type: 'join', room: 'room1', userid: id}));
 };
 
 ws.onmessage = (event) => {
     let response = JSON.parse(event.data);
     updateQueue.push(() => {
         docData = response.data;
-        let text = docData.slice(1, -1).map(item => item.char).join('');
+        let sortedData = [...docData].sort((a, b) => a.pos - b.pos);
+        let text = sortedData.slice(1, -1).map(item => item.char).join('');
         console.log('Updated document:', text);
         console.log('Cursor shift:', response.cursorShift);
 
@@ -110,7 +114,7 @@ document.getElementById('editor').addEventListener("selectionchange", (event) =>
             console.log("insertPos: " + insertPos + "\n");
 
             let insertedChars = text.slice(diffPos, diffPos + text.length - prevText.length);
-            ws.send(JSON.stringify({ type: 'insert', chars: insertedChars, pos: insertPos }));
+            ws.send(JSON.stringify({ type: 'insert', chars: insertedChars, pos: insertPos, userid: id }));
             
 
         }

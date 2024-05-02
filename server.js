@@ -9,7 +9,7 @@ class Document {
         this.last_operations = [];
     }
 
-    insert(char, position, ws) {
+    insert(char, position, userindex) {
 
         //console.log("insert pos " + pos);
         let index = this.data.findIndex(item => item.pos >= position);
@@ -20,15 +20,17 @@ class Document {
         }
     
         let newPos = (this.data[index].pos + this.data[index + 1].pos) / 2;
-        newPos += this.users.indexOf(ws) * 0.0001 + 0.0001;
+        newPos += userindex * 0.0001 + 0.0001;
         
         this.data.splice(index + 1, 0, {char: char, pos: newPos, deleteFlag: false});
         
 
-        this.operations.push({char: char, position: position, newPos: newPos, userindex: this.users.indexOf(ws), operation: 'insert'});
+        this.operations.push({char: char, position: position, newPos: newPos, userindex: userindex, operation: 'insert'});
         //console.log(JSON.stringify(this.operations));
+
         //error here:
-        console.log("user index " + this.users.indexOf(ws));
+        console.log("user index " + userindex);
+
         this.last_operations = []; //clear last operations because new operation means redo is gone
         return 1 //, index; // Return the cursor shift
     }
@@ -126,17 +128,22 @@ wss.on('connection', ws => {
         if (!rooms[operation.room]) {
             rooms[operation.room] = {
                 doc: new Document([]), 
-                users: []
+                users: [operation.userid]
             };
         }
         let room = rooms[operation.room];
         let doc = room.doc;
         let cursorShift = 0;
         if (operation.type === 'join') {
-            room.users.push(ws);
-            doc.users = room.users; 
+            let room = rooms[operation.room]
+            
+            room.users.push(operation.userid);
+            doc.users = room.users;
+
+            console.log("users " + JSON.stringify(room.users));
         } else if (operation.type === 'leave') {
-            let index = room.users.indexOf(ws);
+            let room = rooms[operation.room]
+            let index = room.users.indexOf(operation.userid);
             if (index !== -1) {
                 room.users.splice(index, 1);
             }
@@ -145,7 +152,11 @@ wss.on('connection', ws => {
                 delete rooms[operation.room];
             }
         } else if (operation.type === 'insert') {
-            cursorShift = doc.insert(operation.chars, operation.pos, ws);
+            let room = rooms[operation.room]
+            console.log("room "  + JSON.stringify(room));
+
+            let userIndex = room.users.indexOf(operation.userid);
+            cursorShift = doc.insert(operation.chars, operation.pos, userIndex);
         } else if (operation.type === 'delete') {
             cursorShift = doc.delete(operation.pos, operation.length);
         } else if (operation.type === 'undo') {
@@ -170,3 +181,4 @@ wss.on('connection', ws => {
         });
     });
 });
+
