@@ -49,7 +49,7 @@ let id = 'id' + Math.random().toString(36).substr(2, 9);
 
 ws.onopen = () => {
     console.log('Connected to the server');
-    ws.send(JSON.stringify({type: 'join', room: 'room1', userid: id}));
+    ws.send(JSON.stringify({type: 'join', roomId: 'room1', userid: id}));
 };
 
 ws.onmessage = (event) => {
@@ -66,17 +66,6 @@ ws.onmessage = (event) => {
         // Update textContent
         document.getElementById('editor').value = text; //textContent 
         
-        // Restore cursor position
-        //moveCursor(lastcursorPos);
-        
-        // Adjust the cursor position //needs work
-        // if (response.cursorShift && response.cursorShift !== 0 && document.getElementById('editor').selectionStart != null) 
-        //     {
-        //         setTimeout(() => {
-        //             updateCursorPosition(response.cursorShift);
-        //         }, 10);
-        //     }
-        // Restore cursor position
         if (response.type === 'insert') {
             updateCursorPosition(response.chars, response.pos, 0, prevCursorPos);
         } else if (response.type === 'delete') {
@@ -90,7 +79,7 @@ ws.onmessage = (event) => {
 
 
 document.getElementById('editor').addEventListener("selectionchange", (event) => { //selectionchange
-    console.log('Caret at: ', event.target.selectionStart);
+    //console.log('Caret at: ', event.target.selectionStart);
     //console.log("text " + event.target.value);
     updateQueue.push(() => {
         
@@ -100,7 +89,6 @@ document.getElementById('editor').addEventListener("selectionchange", (event) =>
         // Update lastcursorPos with the actual cursor position
             lastcursorPos = event.target.selectionStart;
 
-
         // Find the position where the text differs
         let diffPos = 0;
         while (diffPos < text.length && diffPos < prevText.length && text[diffPos] === prevText[diffPos]) {
@@ -108,23 +96,26 @@ document.getElementById('editor').addEventListener("selectionchange", (event) =>
         }
         //lastcursorPos = diffPos;
         //console.log("diffPos: " + diffPos + "\n" + "text: " + text + "\n" + "prevText: " + prevText);
+        
         // If characters were inserted
         if (text.length > prevText.length) {
-            let insertPos = docData[diffPos].pos; 
-            console.log("insertPos: " + insertPos + "\n");
+            let prevInsertPos = docData[diffPos].pos; 
+            let nextInsertPos;
+            if (diffPos + 1 < docData.length) nextInsertPos= docData[diffPos + 1].pos;
+            else nextInsertPos = docData[docData.length - 1].pos;
 
-            let insertedChars = text.slice(diffPos, diffPos + text.length - prevText.length);
-            ws.send(JSON.stringify({ type: 'insert', chars: insertedChars, pos: insertPos, userid: id }));
+            let insertPos = (prevInsertPos + nextInsertPos) / 2;
+            let insertedChar = text.slice(diffPos, diffPos + text.length - prevText.length);
+            ws.send(JSON.stringify({ type: 'insert', chars: insertedChar, pos: insertPos, userid: id, roomId: 'room1',}));
             
-
         }
+
         // If characters were deleted
         else if (text.length < prevText.length) {
             let deletePos = (diffPos + 1 < docData.length) ? docData[diffPos + 1].pos : docData[docData.length - 1].pos;
             let deletedLength = prevText.length - text.length;
-            ws.send(JSON.stringify({ type: 'delete', pos: deletePos, length: deletedLength }));
+            ws.send(JSON.stringify({ type: 'delete', pos: deletePos, length: deletedLength, roomId: 'room1', }));
             
-
         }
         
     });

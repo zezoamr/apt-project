@@ -1,4 +1,4 @@
-text editor using ot (operational transform) method
+text editor using crdt method
 
 2 clients connect to websocket room, server has an empty document or one loaded from database
 

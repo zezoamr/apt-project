@@ -14,17 +14,10 @@ class Document {
         //console.log("insert pos " + pos);
         let index = this.data.findIndex(item => item.pos >= position);
         
-        //console.log("insert index " + index);
-        if (index === -1 ) { 
-            return 0;
-        }
-    
-        let newPos = (this.data[index].pos + this.data[index + 1].pos) / 2;
-        newPos += userindex * 0.0001 + 0.0001;
+        let newPos =  position + userindex * 0.0001 + 0.0001;
         
-        this.data.splice(index + 1, 0, {char: char, pos: newPos, deleteFlag: false});
+        this.data.splice(index, 0, {char: char, pos: newPos, deleteFlag: false});
         
-
         this.operations.push({char: char, position: position, newPos: newPos, userindex: userindex, operation: 'insert'});
         //console.log(JSON.stringify(this.operations));
 
@@ -46,17 +39,18 @@ class Document {
         //this.data[index].deleteFlag = true;
         //console.log("delete " + JSON.stringify(this.data));
 
-        this.operations.push({char: char, position: position, operation: 'delete'});
+        this.operations.push({ position: pos, length: length, operation: 'delete'});
         this.last_operations = []; //clear last operations because new operation means redo is gone
         return -1// , index; // Return the cursor shift, negative cursor shift to move the cursor to the left
     }
 
 
     undo() {
+        
         if (this.operations.length === 0) {
             return;
         }
-
+        
         // Create a copy of the base document data
         const undoData = [{char: '', pos: 0, deleteFlag: false}, {char: '', pos: 1000000, deleteFlag: false}];
 
@@ -69,6 +63,9 @@ class Document {
                 this.undo_redo_delete(op.pos, op.length, undoData);
             }
         }
+
+        //sort by pos
+        baseData.sort((a, b) => a.pos - b.pos);
 
         this.last_operations.unshift( this.operations[this.operations.length - 1]); 
 
@@ -107,7 +104,6 @@ class Document {
         let index = this.data.findIndex(item => item.pos === pos);
         if (index === -1) {
             return 0;
-            
         }
         baseData.splice(index, length);
     }
