@@ -78,7 +78,7 @@ ws.onmessage = (event) => {
 
 
 
-document.getElementById('editor').addEventListener("selectionchange", (event) => { //selectionchange
+document.getElementById('editor').addEventListener("selectionchange", (event) => { 
     //console.log('Caret at: ', event.target.selectionStart);
     //console.log("text " + event.target.value);
     updateQueue.push(() => {

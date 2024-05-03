@@ -5,7 +5,7 @@ class Document {
     constructor(users) {
         this.data = [{char: '', pos: 0, deleteFlag: false}, {char: '', pos: 1000000, deleteFlag: false}]; // Start token
         this.users = users //|| [];
-        this.operations=[];
+        this.operations = [];
         this.last_operations = [];
     }
 
@@ -22,7 +22,7 @@ class Document {
         //console.log(JSON.stringify(this.operations));
 
         //error here:
-        console.log("user index " + userindex);
+        //console.log("user index " + userindex);
 
         this.last_operations = []; //clear last operations because new operation means redo is gone
         return 1 //, index; // Return the cursor shift
@@ -55,7 +55,7 @@ class Document {
         const undoData = [{char: '', pos: 0, deleteFlag: false}, {char: '', pos: 1000000, deleteFlag: false}];
 
         // Apply all operations except the last one
-        for (let i = 0; i < this.operations.length ; i++) { 
+        for (let i = 0; i < this.operations.length -1; i++) { 
             const op = this.operations[i];
             if (op.operation === 'insert') {
                 this.undo_redo_insert(op.char, op.newPos, undoData);
@@ -65,7 +65,7 @@ class Document {
         }
 
         //sort by pos
-        baseData.sort((a, b) => a.pos - b.pos);
+        undoData.sort((a, b) => a.pos - b.pos);
 
         this.last_operations.unshift( this.operations[this.operations.length - 1]); 
 
@@ -76,23 +76,25 @@ class Document {
     }
 
     redo(){
+        //console.log("redo data before " + JSON.stringify(this.last_operations))
         if (this.last_operations.length === 0) {
             return;
         }
-        let last_operation = this.last_operations.shift();
+        const last_operation = this.last_operations.shift();
         //console.log("here " + JSON.stringify(this.last_operation))
 
         if (last_operation) {
             
             if (last_operation.operation === 'insert') {
                 this.undo_redo_insert(last_operation.char, last_operation.newPos, this.data);
-            } else if (this.last_operation.operation === 'delete') {
+            } else if (last_operation.operation === 'delete') {
                 this.undo_redo_delete(last_operation.pos, last_operation.length, this.data);
             }
             this.operations.push(last_operation);
-        }
-        //console.log("redo data after" + JSON.stringify(this.data))
-        
+        } 
+
+        this.data.sort((a, b) => a.pos - b.pos);
+        //console.log("redo data after " + JSON.stringify(this.data))
         
     }
 
@@ -130,13 +132,15 @@ wss.on('connection', ws => {
         let room = rooms[operation.room];
         let doc = room.doc;
         let cursorShift = 0;
+        let response_type = operation.type;
+
         if (operation.type === 'join') {
             let room = rooms[operation.room]
             
             room.users.push(operation.userid);
             doc.users = room.users;
 
-            console.log("users " + JSON.stringify(room.users));
+            //console.log("users " + JSON.stringify(room.users));
         } else if (operation.type === 'leave') {
             let room = rooms[operation.room]
             let index = room.users.indexOf(operation.userid);
@@ -149,9 +153,10 @@ wss.on('connection', ws => {
             }
         } else if (operation.type === 'insert') {
             let room = rooms[operation.room]
-            console.log("room "  + JSON.stringify(room));
-
+            //console.log("room "  + JSON.stringify(room));
+            
             let userIndex = room.users.indexOf(operation.userid);
+            console.log("user index " + userIndex);
             cursorShift = doc.insert(operation.chars, operation.pos, userIndex);
         } else if (operation.type === 'delete') {
             cursorShift = doc.delete(operation.pos, operation.length);
@@ -166,13 +171,13 @@ wss.on('connection', ws => {
         // Broadcast the updated document and cursor shift to all connected clients
         wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({data: doc.data, cursorShift: 0})); //no need to update cursor at original
+                client.send(JSON.stringify({data: doc.data, cursorShift: 0, type: response_type})); //no need to update cursor at original
             }
         });
 
         wss.clients.forEach(client => {
             if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({data: doc.data, cursorShift: cursorShift}));
+                client.send(JSON.stringify({data: doc.data, cursorShift: cursorShift, type: response_type}));
             }
         });
     });
