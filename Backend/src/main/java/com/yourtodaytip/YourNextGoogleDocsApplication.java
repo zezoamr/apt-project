@@ -9,10 +9,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
-public class YourTodayTipApplication {
+public class YourNextGoogleDocsApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(YourTodayTipApplication.class, args);
+        SpringApplication.run(YourNextGoogleDocsApplication.class, args);
     }
 
 

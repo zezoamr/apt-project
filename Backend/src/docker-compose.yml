@@ -6,6 +6,6 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: 123456
-      MYSQL_DATABASE: your-today-tip
+      MYSQL_DATABASE: your-next-google-docs
     ports:
       - 3306:3306
