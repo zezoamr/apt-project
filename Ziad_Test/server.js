@@ -17,6 +17,9 @@ const WebSocket = require('ws');
 //insert and delete should be single characters otherwise my implementation in front end that detects text differences doesn't work 
 //(let prevInsertPos = docData[diffPos].pos; ) index here will be wrong or throw error because multiple chars will have same index in docdata
 // SO FOR TAGS <b> EACH CHAR NEEDS TO BE INSERTED SEPRETELY '<' 'b' '>' IF WE WILL USE THE CURRENT TEMP IMPLEMENTATION TO DETECT DIFFERENCES
+// two solutions:
+// 1) at server side: function unpack multiple char structure into multiple structures each containing a char
+// 2) at front end: a function that takes bold/italic flags and inserts tags while converting doc structure to text
 
 class Document {
     constructor(users) {
