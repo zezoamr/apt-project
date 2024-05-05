@@ -40,17 +40,59 @@ function updateCursorPosition(insertedChars, insertPos, deletedLength, prevCurso
 }
 
 const ws = new WebSocket('ws://localhost:8080');
-let docData = [{char: '', pos: 0}, {char: '', pos: 100000000}]; 
+let docData = [{char: '', pos: 0, boldFlag: false, italicFlag: false}, {char: '', pos: 100000000, boldFlag: false, italicFlag: false}]; 
 let updateQueue = [];
 let isUpdating = false;
 //let lastcursorPos = 0;
 
-let id = 'id' + Math.random().toString(36).substr(2, 9);
+let id = 'id1'+ Math.random().toString(36).substr(2, 9); //write a function that gets id from java auth server
 
 ws.onopen = () => {
-    console.log('Connected to the server');
+    console.log('Connected to the websockets server');
     ws.send(JSON.stringify({type: 'join', roomId: 'room1', userid: id}));
+    loadSavedDoc();
 };
+
+
+function loadSavedDoc() {
+    
+    function operation_insert(char, newPos,  baseData) {
+        baseData.push({ char: char, pos: newPos, deleteFlag: false });
+    }
+
+    function operation_delete(pos, length, baseData) {
+        let index = this.data.findIndex(item => item.pos === pos);
+        if (index === -1) {
+            return 0;
+        }
+        baseData.splice(index, length);
+    }
+
+    let trial_ops = [{"char":"h","position":500000,"newPos":500000.0001,"userindex":0,"operation":"insert"},
+    {"char":"w","position":750000.00005,"newPos":750000.00015,"userindex":0,"operation":"insert"}, 
+    ] //replace with server call
+    
+    if (trial_ops.length === 0) {
+        return;
+    }
+    let newdata = [{char: '', pos: 0, deleteFlag: false, boldFlag: false, italicFlag: false},
+        {char: '', pos: 1000000, deleteFlag: false, boldFlag: false, italicFlag: false}]; // Start token
+
+    for (let operation of trial_ops) {
+        console.log(operation.operation);
+        if (operation.operation === 'insert') {
+            operation_insert(operation.char, operation.newPos, newdata);
+        } else if (operation.operation === 'delete') {
+            operation_delete(operation.pos, operation.length, newdata);
+        }
+        
+    }   
+
+    newdata.sort((a, b) => a.pos - b.pos);
+    docData = newdata;
+    //ws.send(JSON.stringify({type: 'loadData', newdata: newdata}));
+    ws.send(JSON.stringify({type: 'loadOperations', operations: trial_ops}));
+}
 
 ws.onmessage = (event) => {
     let response = JSON.parse(event.data);
@@ -64,13 +106,14 @@ ws.onmessage = (event) => {
         const prevCursorPos = editor.selectionStart;
         
         // Update textContent
-        document.getElementById('editor').value = text; //textContent 
+        document.getElementById('editor').value = text; 
         
         if (response.type === 'insert') {
             updateCursorPosition(response.chars, response.pos, 0, prevCursorPos);
         } else if (response.type === 'delete') {
             updateCursorPosition(null, response.pos, response.length, prevCursorPos);
         }
+        
     
     });
     processUpdateQueue();
@@ -82,12 +125,12 @@ document.getElementById('editor').addEventListener("selectionchange", (event) =>
     //console.log('Caret at: ', event.target.selectionStart);
     //console.log("text " + event.target.value);
     updateQueue.push(() => {
-        
+    
         let text = event.target.value; //textContent
         let prevText = docData.slice(1, -1).map(item => item.char).join('');
 
         // Update lastcursorPos with the actual cursor position
-            lastcursorPos = event.target.selectionStart;
+        lastcursorPos = event.target.selectionStart;
 
         // Find the position where the text differs
         let diffPos = 0;
@@ -95,7 +138,7 @@ document.getElementById('editor').addEventListener("selectionchange", (event) =>
             diffPos++;
         }
         //lastcursorPos = diffPos;
-        //console.log("diffPos: " + diffPos + "\n" + "text: " + text + "\n" + "prevText: " + prevText);
+        console.log("diffPos: " + diffPos + "\n")// + "text: " + text + "\n" + "prevText: " + prevText);
         
         // If characters were inserted
         if (text.length > prevText.length) {
@@ -117,7 +160,7 @@ document.getElementById('editor').addEventListener("selectionchange", (event) =>
             ws.send(JSON.stringify({ type: 'delete', pos: deletePos, length: deletedLength, roomId: 'room1', }));
             
         }
-        
+    
     });
     processUpdateQueue();
 });
@@ -149,3 +192,19 @@ const redoButton = document.getElementById('redoButton');
         ws.send(JSON.stringify({ type: 'redo' }));
 });
 
+const loadButton = document.getElementById('loadButton');
+    loadButton.addEventListener('click', () => {
+        ws.send(JSON.stringify({ type: 'load', operations: getOperationsFromServer() }));
+});
+
+// function getDocFromServer() {
+//     return axios.get('http://localhost:8080/loadDoc') //modify url to correct one
+//         .then(response => {
+//             const { operations} = response.data; // assuming these properties exist in your response data
+//             return { operations};
+//         })
+//         .catch(error => {
+//             console.error(error);
+//             //throw error; // re-throw the error to be handled by the caller
+//         });
+// }
