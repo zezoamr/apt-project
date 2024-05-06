@@ -153,6 +153,8 @@ class Document {
             // add bold and italic operartions
         }
 
+        this.operations = operations;
+
         this.data.sort((a, b) => a.pos - b.pos);
     }
 
