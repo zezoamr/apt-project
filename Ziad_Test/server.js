@@ -3,7 +3,7 @@ const WebSocket = require('ws');
 // todo code
 // load document from user (ziad).
 // bold and italic flag and functions, func (start unqiue identifer(pos), end unique identifier(pos)) modifies document (flags between idenifier pos) (yousef).
-// display cursor of all users (dict contain user id and cursor position) broadcast to front when change happens, at front display them in different colors.
+// display cursor of all users (dict contain user id and cursor position) broadcast to front when change happens, at front display them in different colors. (shams)
 // add appropriate try catch blocks
 //--- todo not code
 // ask about if we should implement cursor shift at other users when they edit.
@@ -174,7 +174,7 @@ wss.on('connection', ws => {
         if (!rooms[operation.room]) {
             rooms[operation.room] = {
                 doc: new Document([]), 
-                users: [operation.userid]
+                users: [operation.userid] //dictionary of userid : cursor position
             };
         }
         let room = rooms[operation.room];
@@ -191,7 +191,7 @@ wss.on('connection', ws => {
             //console.log("users " + JSON.stringify(room.users));
         } else if (operation.type === 'leave') {
             let room = rooms[operation.room]
-            let index = room.users.indexOf(operation.userid);
+            let index = room.users.indexOf(operation.userid); // if changed room.users from [] to dict please update this
             if (index !== -1) {
                 room.users.splice(index, 1);
             }
@@ -224,7 +224,7 @@ wss.on('connection', ws => {
 
         // Broadcast the updated document and cursor shift to all connected clients
         wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
+            if (client === ws && client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify({data: doc.data, cursorShift: 0, type: response_type})); //no need to update cursor at original
             }
         });

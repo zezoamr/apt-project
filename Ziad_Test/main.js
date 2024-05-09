@@ -84,6 +84,8 @@ ws.onmessage = (event) => {
 document.getElementById('editor').addEventListener("selectionchange", (event) => { 
     //console.log('Caret at: ', event.target.selectionStart);
     //console.log("text " + event.target.value);
+
+    // check if position shifted: send userid, cursor to server websocket 
     updateQueue.push(() => {
     
         let text = event.target.value; //textContent

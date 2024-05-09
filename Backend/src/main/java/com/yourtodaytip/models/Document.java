@@ -38,7 +38,7 @@ public class Document {
     public Document(int id, String title, String content, User owner, List<User> editors, List<User> viewers) {
         this.id = id;
         this.title = title;
-        this.content = content;
+        this.content = content; //instead of text change to a datastructure 
         this.owner = owner;
         this.editors = editors;
         this.viewers = viewers;
