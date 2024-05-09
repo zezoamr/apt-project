@@ -20,6 +20,7 @@ function updateCursorPosition(insertedChars, insertPos, deletedLength, prevCurso
         if (prevCursorPos >= insertPos) {
             // If the cursor was at or after the insertion point, move it forward
             newCursorPosition += insertedChars.length;
+            newCursorPosition++
         }
     } else if (deletedLength) {
         // If characters were deleted
@@ -32,11 +33,10 @@ function updateCursorPosition(insertedChars, insertPos, deletedLength, prevCurso
         }
     }
 
-    const textLength = editor.value.length;
-
-    // Cap the cursor position to the end of the text
-    editor.selectionStart = Math.min(newCursorPosition, textLength);
-    editor.selectionEnd = editor.selectionStart;
+    if (editor.setSelectionRange) {
+        editor.focus();
+        editor.setSelectionRange(newCursorPosition, newCursorPosition);
+    }
 }
 
 const ws = new WebSocket('ws://localhost:8080');
@@ -158,6 +158,7 @@ const loadButton = document.getElementById('loadButton');
 });
 
 function getOperationsFromServer() {
+    //send docid recive doc operations from java server document
     loadSavedDoc();
 }
 
