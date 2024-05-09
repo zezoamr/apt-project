@@ -21,7 +21,7 @@ public class Document {
     private String content;
 
     @ManyToOne
-    private User author;
+    private User owner;
 
     @ManyToMany
     private List<User> editors;
@@ -35,21 +35,26 @@ public class Document {
     public Document() {
     }
 
-    public Document(int id, String title, String content, User author, List<User> editors, List<User> viewers) {
+    public Document(int id, String title, String content, User owner, List<User> editors, List<User> viewers) {
         this.id = id;
         this.title = title;
         this.content = content;
-        this.author = author;
+        this.owner = owner;
         this.editors = editors;
         this.viewers = viewers;
     }
 
-    public Document(String title, String content, User author, List<User> editors, List<User> viewers) {
+    public Document(String title, String content, User owner, List<User> editors, List<User> viewers) {
         this.title = title;
         this.content = content;
-        this.author = author;
+        this.owner = owner;
         this.editors = editors;
         this.viewers = viewers;
+    }
+
+    public Document(String title, User owner) {
+        this.title = title;
+        this.owner = owner;
     }
 
     // Getter and Setter
@@ -61,6 +66,11 @@ public class Document {
     public void setId(int id) {
         this.id = id;
     }
+
+    public User getOwner() {
+        return owner;
+    }
+
 
     public String getTitle() {
         return title;
@@ -78,13 +88,6 @@ public class Document {
         this.content = content;
     }
 
-    public User getAuthor() {
-        return author;
-    }
-
-    public void setAuthor(User author) {
-        this.author = author;
-    }
 
     public List<User> getEditors() {
         return editors;
@@ -114,4 +117,5 @@ public class Document {
                 ", viewers=" + viewers +
                 '}';
     }
+
 }
