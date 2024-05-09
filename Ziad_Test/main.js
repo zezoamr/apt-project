@@ -50,49 +50,9 @@ let id = 'id1'+ Math.random().toString(36).substr(2, 9); //write a function that
 ws.onopen = () => {
     console.log('Connected to the websockets server');
     ws.send(JSON.stringify({type: 'join', roomId: 'room1', userid: id}));
-    loadSavedDoc();
+    
 };
 
-
-function loadSavedDoc() {
-    
-    function operation_insert(char, newPos,  baseData) {
-        baseData.push({ char: char, pos: newPos, deleteFlag: false });
-    }
-
-    function operation_delete(pos, length, baseData) {
-        let index = this.data.findIndex(item => item.pos === pos);
-        if (index === -1) {
-            return 0;
-        }
-        baseData.splice(index, length);
-    }
-
-    let trial_ops = [{"char":"h","position":500000,"newPos":500000.0001,"userindex":0,"operation":"insert"},
-    {"char":"w","position":750000.00005,"newPos":750000.00015,"userindex":0,"operation":"insert"}, 
-    ] //replace with server call
-    
-    if (trial_ops.length === 0) {
-        return;
-    }
-    let newdata = [{char: '', pos: 0, deleteFlag: false, boldFlag: false, italicFlag: false},
-        {char: '', pos: 1000000, deleteFlag: false, boldFlag: false, italicFlag: false}]; // Start token
-
-    for (let operation of trial_ops) {
-        console.log(operation.operation);
-        if (operation.operation === 'insert') {
-            operation_insert(operation.char, operation.newPos, newdata);
-        } else if (operation.operation === 'delete') {
-            operation_delete(operation.pos, operation.length, newdata);
-        }
-        
-    }   
-
-    newdata.sort((a, b) => a.pos - b.pos);
-    docData = newdata;
-    //ws.send(JSON.stringify({type: 'loadData', newdata: newdata}));
-    ws.send(JSON.stringify({type: 'loadOperations', operations: trial_ops}));
-}
 
 ws.onmessage = (event) => {
     let response = JSON.parse(event.data);
@@ -196,6 +156,50 @@ const loadButton = document.getElementById('loadButton');
     loadButton.addEventListener('click', () => {
         ws.send(JSON.stringify({ type: 'load', operations: getOperationsFromServer() }));
 });
+
+function getOperationsFromServer() {
+    loadSavedDoc();
+}
+
+function loadSavedDoc() {
+    
+    function operation_insert(char, newPos,  baseData) {
+        baseData.push({ char: char, pos: newPos, deleteFlag: false });
+    }
+
+    function operation_delete(pos, length, baseData) {
+        let index = this.data.findIndex(item => item.pos === pos);
+        if (index === -1) {
+            return 0;
+        }
+        baseData.splice(index, length);
+    }
+
+    let trial_ops = [{"char":"h","position":500000,"newPos":500000.0001,"userindex":0,"operation":"insert"},
+    {"char":"w","position":750000.00005,"newPos":750000.00015,"userindex":0,"operation":"insert"}, 
+    ] //replace with server call
+    
+    if (trial_ops.length === 0) {
+        return;
+    }
+    let newdata = [{char: '', pos: 0, deleteFlag: false, boldFlag: false, italicFlag: false},
+        {char: '', pos: 1000000, deleteFlag: false, boldFlag: false, italicFlag: false}]; // Start token
+
+    for (let operation of trial_ops) {
+        console.log(operation.operation);
+        if (operation.operation === 'insert') {
+            operation_insert(operation.char, operation.newPos, newdata);
+        } else if (operation.operation === 'delete') {
+            operation_delete(operation.pos, operation.length, newdata);
+        }
+        
+    }   
+
+    newdata.sort((a, b) => a.pos - b.pos);
+    docData = newdata;
+    //ws.send(JSON.stringify({type: 'loadData', newdata: newdata}));
+    ws.send(JSON.stringify({type: 'loadOperations', operations: trial_ops}));
+}
 
 // function getDocFromServer() {
 //     return axios.get('http://localhost:8080/loadDoc') //modify url to correct one
