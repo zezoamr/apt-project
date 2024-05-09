@@ -112,7 +112,7 @@ public class Document {
         return "Document{" +
                 "id=" + id +
                 ", title='" + title + '\'' +
-                ", author=" + author +
+                ", owner=" + owner +
                 ", editors=" + editors +
                 ", viewers=" + viewers +
                 '}';
