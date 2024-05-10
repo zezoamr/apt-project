@@ -21,7 +21,7 @@ public interface DocumentService {
 
     List<Document> getAllDocuments(User user);
 
-    List<Document> getUserDocuments(User user);
+    List<Document> getOwnedDocuments(User user);
 
     List<Document> getSharedDocuments(User user);
 
