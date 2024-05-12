@@ -10,7 +10,6 @@ import java.util.List;
 @Data
 @Table(name = "documents")
 @ToString
-
 public class Document {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
