@@ -10,12 +10,9 @@ import java.util.List;
 @Repository
 public interface DocumentRepository extends JpaRepository<Document, Integer> {
 
-    Document findByName(String name);
-
-    List<Document> findAll();
+    Document findByTitle(String title);
 
     List<Document> findByOwner(User owner);
 
-    List<Document> findBySharedWith(User sharedWith);
 }
 

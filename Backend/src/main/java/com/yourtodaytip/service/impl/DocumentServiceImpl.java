@@ -3,9 +3,7 @@ package com.yourtodaytip.service.impl;
 import com.yourtodaytip.models.Document;
 import com.yourtodaytip.service.DocumentService;
 import com.yourtodaytip.repository.DocumentRepository;
-import com.yourtodaytip.dao.DocumentDao;
 import com.yourtodaytip.exception.AccessDeniedException;
-import com.yourtodaytip.exception.ResourceNotFoundException;
 import com.yourtodaytip.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,7 +33,7 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     public Document openDocument(String name, User user) {
-        Document document = documentRepository.findByName(name); //.orElseThrow(() -> new ResourceNotFoundException("Document with name [%s] not found".formatted(name)));
+        Document document = documentRepository.findByTitle(name); //.orElseThrow(() -> new ResourceNotFoundException("Document with name [%s] not found".formatted(name)));
         if (document.getOwner().equals(user) || document.getEditors().contains(user) || document.getViewers().contains(user)) {
             return document;
         } else {
@@ -44,7 +42,7 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     public Document renameDocument(String oldName, String newName, User user) {
-        Document document = documentRepository.findByName(oldName); //.orElseThrow(() -> new ResourceNotFoundException("Document with name [%s] not found".formatted(oldName)));
+        Document document = documentRepository.findByTitle(oldName); //.orElseThrow(() -> new ResourceNotFoundException("Document with name [%s] not found".formatted(oldName)));
         if (document.getOwner().equals(user) || document.getEditors().contains(user)) {
             document.setTitle(newName);
             documentRepository.save(document);
@@ -55,7 +53,7 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     public void deleteDocument(String name, User user) {
-        Document document = documentRepository.findByName(name);//.orElseThrow(() -> new ResourceNotFoundException("Document with name [%s] not found".formatted(name)));
+        Document document = documentRepository.findByTitle(name);//.orElseThrow(() -> new ResourceNotFoundException("Document with name [%s] not found".formatted(name)));
         if (document.getOwner().equals(user)) {
             documentRepository.delete(document);
         } else {
@@ -64,7 +62,7 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     public void shareDocument(String name, User user, User shareWith, String permission) {
-        Document document = documentRepository.findByName(name);//.orElseThrow(() -> new ResourceNotFoundException("Document with name [%s] not found".formatted(name)));
+        Document document = documentRepository.findByTitle(name);//.orElseThrow(() -> new ResourceNotFoundException("Document with name [%s] not found".formatted(name)));
         if (document.getOwner().equals(user)) {
             if (permission.equals("Editor")) {
                 document.getEditors().add(shareWith);
@@ -76,7 +74,7 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     public void changePermission(String name, User user, User shareWith, String permission) {
-        Document document = documentRepository.findByName(name);//.orElseThrow(() -> new ResourceNotFoundException("Document with name [%s] not found".formatted(name)));
+        Document document = documentRepository.findByTitle(name);//.orElseThrow(() -> new ResourceNotFoundException("Document with name [%s] not found".formatted(name)));
         if (document.getOwner().equals(user)) {
             if (permission.equals("Editor")) {
                 document.getEditors().add(shareWith);
@@ -90,7 +88,7 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     public void removePermission(String name, User user, User shareWith, String permission) {
-        Document document = documentRepository.findByName(name);//.orElseThrow(() -> new ResourceNotFoundException("Document with name [%s] not found".formatted(name)));
+        Document document = documentRepository.findByTitle(name);//.orElseThrow(() -> new ResourceNotFoundException("Document with name [%s] not found".formatted(name)));
         if (document.getOwner().equals(user)) {
             if (permission.equals("Editor")) {
                 document.getEditors().remove(shareWith);
@@ -120,10 +118,14 @@ public class DocumentServiceImpl implements DocumentService {
         return userDocuments;
     }
 
-    public List<Document> getSharedDocuments(User user) {
+    public List<Document> getSharedDocuments(User user){
         // return any document the user is the editor or viewer
         List<Document> userDocuments = new ArrayList<>();
-        userDocuments.addAll(documentRepository.findBySharedWith(user));
+        for(Document document : documentRepository.findAll()) {
+            if (document.getEditors().contains(user) || document.getViewers().contains(user)) {
+                userDocuments.add(document);
+            }
+        }
         return userDocuments;
     }
 

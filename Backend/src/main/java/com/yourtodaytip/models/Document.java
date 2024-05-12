@@ -3,12 +3,11 @@ package com.yourtodaytip.models;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
-import org.springframework.data.util.Pair;
 import java.util.List;
 
 @Entity
 @Data
-@Table(name = "documents")
+@Table(name = "Document")
 @ToString
 public class Document {
     @Id
