@@ -1,5 +1,12 @@
 {
   "dependencies": {
-    "ws": "^8.16.0"
+    "ws": "^8.17.0"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "mock-socket": "^9.3.1"
   }
 }

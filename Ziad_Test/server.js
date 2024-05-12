@@ -27,6 +27,7 @@ class Document {
          {char: '', pos: 1000000, deleteFlag: false, boldFlag: false, italicFlag: false}]; // Start token
         this.users = users //|| [];
         this.operations = [];
+        this.cursorPositions = {};
         this.last_operations = [];
     }
     
@@ -40,6 +41,7 @@ class Document {
         this.data.splice(index, 0, {char: char, pos: newPos, deleteFlag: false, boldFlag: false, italicFlag: false});
         
         this.operations.push({char: char, position: position, newPos: newPos, userindex: userindex, operation: 'insert'});
+
         //console.log(JSON.stringify(this.operations));
 
         //error here:
@@ -87,7 +89,6 @@ class Document {
             // add bold and italic operartions
 
         }
-
         //sort by pos
         undoData.sort((a, b) => a.pos - b.pos);
 
@@ -95,6 +96,7 @@ class Document {
 
         // Update the operations array with the new state
         this.operations = this.operations.slice(0, -1);
+
 
         this.data = undoData;
     }
@@ -118,6 +120,7 @@ class Document {
 
             this.operations.push(last_operation);
         } 
+
 
         this.data.sort((a, b) => a.pos - b.pos);
         //console.log("redo data after " + JSON.stringify(this.data))
@@ -162,6 +165,12 @@ class Document {
         // Exclude the start token when joining the characters into a string
         return this.data.slice(1).map(item => item.char).join('');
     }
+    getCursorPosition(userindex) {
+        return this.cursorPositions[userindex];
+    }
+    updateCursorPosition(userindex, pos) {
+        this.cursorPositions[userindex] = pos;
+    }
 }
 
 const wss = new WebSocket.Server({ port: 8080 });
@@ -174,7 +183,8 @@ wss.on('connection', ws => {
         if (!rooms[operation.room]) {
             rooms[operation.room] = {
                 doc: new Document([]), 
-                users: [operation.userid] //dictionary of userid : cursor position
+                users: [operation.userid],
+                cursorPositions: operation.cursorPositions
             };
         }
         let room = rooms[operation.room];
@@ -221,6 +231,10 @@ wss.on('connection', ws => {
             doc.loadOperations(operation.operations);
             cursorShift = 0;
         }
+        else if (operation.type === 'cursor') {
+            doc.updateCursorPosition(operation.userid, operation.pos);
+            cursorShift = 0;
+        }
 
         // Broadcast the updated document and cursor shift to all connected clients
         wss.clients.forEach(client => {
@@ -234,6 +248,14 @@ wss.on('connection', ws => {
                 client.send(JSON.stringify({data: doc.data, cursorShift: cursorShift, type: response_type}));
             }
         });
+        // Broadcast the updated cursor positions to all connected clients
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({cursorPositions: room.cursorPositions, type: response_type}));
+            }
+        });
     });
 });
 
+
+module.exports = Document;
