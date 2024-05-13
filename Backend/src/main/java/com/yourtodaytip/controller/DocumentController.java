@@ -60,22 +60,22 @@ public class DocumentController {
         documentService.deleteDocument(name, (User) authentication.getPrincipal());
     }
 
-    @PostMapping("/share/{name}/{shareWith}/{permission}")
+    @PostMapping("/share/{name}/{email}/{permission}")
     @CrossOrigin(origins="*",allowedHeaders = "*")
-    public void shareDocument(@PathVariable("name") String name, @PathVariable("shareWith") String shareWith, @PathVariable("permission") String permission, Authentication authentication){
-        documentService.shareDocument(name, (User) authentication.getPrincipal(), userService.findByUsername(shareWith), permission);
+    public void shareDocument(@PathVariable("name") String name, @PathVariable("email") String email, @PathVariable("permission") String permission, Authentication authentication){
+        documentService.shareDocument(name, (User) authentication.getPrincipal(), userService.findByEmail(email), permission);
     }
 
-    @PostMapping("/changePermission/{name}/{shareWith}/{permission}")
+    @PostMapping("/changePermission/{name}/{email}/{permission}")
     @CrossOrigin(origins="*",allowedHeaders = "*")
-    public void changePermission(@PathVariable("name") String name, @PathVariable("shareWith") String shareWith, @PathVariable("permission") String permission, Authentication authentication){
-        documentService.changePermission(name, (User) authentication.getPrincipal(), userService.findByUsername(shareWith), permission);
+    public void changePermission(@PathVariable("name") String name, @PathVariable("email") String email, @PathVariable("permission") String permission, Authentication authentication){
+        documentService.changePermission(name, (User) authentication.getPrincipal(), userService.findByEmail(email), permission);
     }
 
-    @PostMapping("/removePermission/{name}/{shareWith}/{permission}")
+    @PostMapping("/removePermission/{name}/{email}/{permission}")
     @CrossOrigin(origins="*",allowedHeaders = "*")
-    public void removePermission(@PathVariable("name") String name, @PathVariable("shareWith") String shareWith, @PathVariable("permission") String permission, Authentication authentication){
-        documentService.removePermission(name, (User) authentication.getPrincipal(), userService.findByUsername(shareWith), permission);
+    public void removePermission(@PathVariable("name") String name, @PathVariable("email") String email, @PathVariable("permission") String permission, Authentication authentication){
+        documentService.removePermission(name, (User) authentication.getPrincipal(), userService.findByEmail(email), permission);
     }
 
 }
