@@ -228,7 +228,7 @@ wss.on('connection', ws => {
         if (!rooms[operation.room]) {
             rooms[operation.room] = {
                 doc: new Document([]), 
-                users: [operation.userid],
+                users: [],
                 cursorPositions: operation.cursorPositions
             };
         }
