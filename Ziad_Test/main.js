@@ -147,6 +147,17 @@ const loadButton = document.getElementById('loadButton');
         ws.send(JSON.stringify({ type: 'load', operations: getOperationsFromServer() }));
 });
 
+const boldButton = document.getElementById('boldButton');
+    boldButton.addEventListener('click', () => {
+        ws.send(JSON.stringify({ type: 'bold' }));
+});
+
+const italicButton = document.getElementById('italicButton');
+    italicButton.addEventListener('click', () => {
+        ws.send(JSON.stringify({ type: 'italic' }));
+});
+
+
 function getOperationsFromServer() {
     //send docid recive doc operations from java server document
     loadSavedDoc();

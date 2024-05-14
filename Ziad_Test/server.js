@@ -86,7 +86,13 @@ class Document {
             } else if (op.operation === 'delete') {
                 this.operation_delete(op.pos, op.length, undoData);
             }
-            // add bold and italic operartions
+            // // add bold and italic operartions
+            // if (op.operation === 'bold') {
+            //     this.operation_bold(op.start, op.end, undoData);
+            // }
+            // if (op.operation === 'italic') {
+            //     this.operation_italic(op.start, op.end, undoData);
+            // }
 
         }
         //sort by pos
@@ -126,19 +132,7 @@ class Document {
         //console.log("redo data after " + JSON.stringify(this.data))
         
     }
-
-    operation_insert(char, newPos,  baseData) {
-        baseData.push({ char: char, pos: newPos, deleteFlag: false });
-    }
-
-    operation_delete(pos, length, baseData) {
-        let index = this.data.findIndex(item => item.pos === pos);
-        if (index === -1) {
-            return 0;
-        }
-        baseData.splice(index, length);
-    }
-
+    
     loadOperations(operations) {
         if (operations.length === 0) {
             return;
@@ -160,6 +154,57 @@ class Document {
 
         this.data.sort((a, b) => a.pos - b.pos);
     }
+
+    bold(pos, length) {
+        //add bold flag to all characters from pos to pos + length
+        for (let i = 0; i < this.data.length; i++) {
+            if (this.data[i].pos >= pos && this.data[i].pos <= pos + length) {
+                this.data[i].boldFlag = true;
+            }
+        }
+
+        this.operations.push({start: pos, end: pos + length, length: length, operation: 'bold'});
+    }
+
+    italic(pos, length) {
+        //add italic flag to all characters from pos to pos + length
+        for (let i = 0; i < this.data.length; i++) {
+            if (this.data[i].pos >= pos && this.data[i].pos <= pos + length) {
+                this.data[i].italicFlag = true;
+            }
+        }
+
+        this.operations.push({start: pos, end: pos + length, length: length, operation: 'italic'});
+    }
+
+    operation_insert(char, newPos,  baseData) {
+        baseData.push({ char: char, pos: newPos, deleteFlag: false });
+    }
+
+    operation_delete(pos, length, baseData) {
+        let index = this.data.findIndex(item => item.pos === pos);
+        if (index === -1) {
+            return 0;
+        }
+        baseData.splice(index, length);
+    }
+
+    // operation_bold(pos, length, baseData) {
+    //     for (let i = 0; i < baseData.length; i++) {
+    //         if (baseData[i].pos >= pos && baseData[i].pos <= pos + length) {
+    //             baseData[i].boldFlag = true;
+    //         }
+    //     }
+    // }
+
+    // operation_italic(pos, length, baseData) {
+    //     for (let i = 0; i < baseData.length; i++) {
+    //         if (baseData[i].pos >= pos && baseData[i].pos <= pos + length) {
+    //             baseData[i].italicFlag = true;
+    //         }
+    //     }
+    // }
+
 
     toText() {
         // Exclude the start token when joining the characters into a string
@@ -234,6 +279,13 @@ wss.on('connection', ws => {
         else if (operation.type === 'cursor') {
             doc.updateCursorPosition(operation.userid, operation.pos);
             cursorShift = 0;
+        }
+        else if (operation.type === 'bold') {
+            doc.bold(); // Call bold method in Document class
+            cursorShift = 0; // Set cursor shift if necessary
+        } else if (operation.type === 'italic') {
+            doc.italic(); // Call italic method in Document class
+            cursorShift = 0; // Set cursor shift if necessary
         }
 
         // Broadcast the updated document and cursor shift to all connected clients
