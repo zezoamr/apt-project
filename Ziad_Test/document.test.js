@@ -1,32 +1,50 @@
-const WebSocket = require('mock-socket').WebSocket;
-const Server = require('mock-socket').Server;
+const Document = require('./server'); // adjust the path to match your project structure
 
-test('should broadcast cursor position', done => {
-  const mockServer = new Server('ws://localhost:8080');
+describe('Document class', () => {
+    let doc;
+    const users = ['user1', 'user2'];
 
-  mockServer.on('connection', socket => {
-    socket.on('message', data => {
-      const message = JSON.parse(data);
-      if (message.type === 'cursor') {
-        mockServer.clients().forEach(client => {
-          client.send(JSON.stringify({cursorPositions: message.cursorPositions, type: message.type}));
-        });
-      }
+    beforeEach(() => {
+        doc = new Document(users);
     });
-  });
 
-  const client1 = new WebSocket('ws://localhost:8080');
-  const client2 = new WebSocket('ws://localhost:8080');
+    test('insert operation', () => {
+        doc.insert('a', 1, 0);
+        expect(doc.data[1].char).toBe('a');
+        expect(doc.data[1].pos).toBeCloseTo(1.0001);
+    });
 
-  client1.onopen = () => {
-    client1.send(JSON.stringify({type: 'cursor', cursorPositions: {userid: 1, pos: 5}}));
-  };
+    test('delete operation', () => {
+        doc.insert('a', 1, 0);
+        doc.delete(1.0001, 1);
+        expect(doc.data.find(item => item.pos === 1.0001)).toBeUndefined();
+    });
 
-  client2.onmessage = event => {
-    const message = JSON.parse(event.data);
-    if (message.type === 'cursor') {
-      expect(message.cursorPositions).toEqual({userid: 1, pos: 5});
-      mockServer.stop(done);
-    }
-  };
+    test('undo operation', () => {
+        doc.insert('a', 1, 0);
+        doc.undo();
+        expect(doc.data.find(item => item.pos === 1.0001)).toBeUndefined();
+    });
+
+    test('redo operation', () => {
+        doc.insert('a', 1, 0);
+        doc.undo();
+        doc.redo();
+        expect(doc.data[1].char).toBe('a');
+        expect(doc.data[1].pos).toBeCloseTo(1.0001);
+    });
+
+    test('loadOperations operation', () => {
+        const operations = [
+            {char: 'a', newPos: 1.0001, operation: 'insert'},
+            {pos: 1.0001, length: 1, operation: 'delete'}
+        ];
+        doc.loadOperations(operations);
+        expect(doc.data.find(item => item.pos === 1.0001)).toBeUndefined();
+    });
+
+    test('updateCursorPosition operation', () => {
+        doc.updateCursorPosition('user1', 5);
+        expect(doc.getCursorPosition('user1')).toBe(5);
+    });
 });

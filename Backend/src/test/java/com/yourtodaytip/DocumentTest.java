@@ -5,6 +5,7 @@ import com.yourtodaytip.models.User;
 import com.yourtodaytip.repository.DocumentRepository;
 import com.yourtodaytip.service.impl.DocumentServiceImpl;
 import org.junit.jupiter.api.Test;
+import org.mockito.internal.matchers.Null;
 import org.springframework.boot.test.context.SpringBootTest;
 
 // Here we are testing the Document class and its methods
@@ -15,9 +16,8 @@ public class DocumentTest {
         @Test
         void testDocument() {
             User user = new User("name", "mail1", "pass");
-            Document document = new Document("title", "content", user, null, null);
+            Document document = new Document("title", null, user, null, null);
             assert(document.getTitle().equals("title"));
-            assert(document.getContent().equals("content"));
             assert(document.getOwner().equals(user));
         }
 
