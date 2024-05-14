@@ -101,9 +101,10 @@ const ws = new WebSocket('ws://localhost:8080');
 
 export default function DocsNewEditForm({ currentDocument }: Props) {
   const { user } = useGetUser();
-  console.log(user);
-
-  const [docData, setDocData] = useState();
+  const params = useParams();
+  const { id } = params;
+  const newsfeedId = parseInt(id!, 10);
+  const [docData, setDocData] = useState([...opsData].sort((a, b) => a.pos - b.pos));
 
   useEffect(() => {
     if (user) {
@@ -111,13 +112,6 @@ export default function DocsNewEditForm({ currentDocument }: Props) {
       console.log('Connected to the websockets server');
     }
   }, [user]);
-
-  ws.onmessage = (event) => {};
-
-  const params = useParams();
-  const { id } = params;
-  const newsfeedId = parseInt(id!, 10);
-  // console.log(newsfeedId);
 
   const NewLocationSchema = Yup.object().shape({
     title: Yup.string().required('Please Enter Title'),
@@ -148,8 +142,52 @@ export default function DocsNewEditForm({ currentDocument }: Props) {
     console.log(data);
   });
 
+  // if (text.length > prevText.length) {
+  //             let prevInsertPos = docData[diffPos].pos;
+  //             let nextInsertPos;
+  //             if (diffPos + 1 < docData.length) nextInsertPos= docData[diffPos + 1].pos;
+  //             else nextInsertPos = docData[docData.length - 1].pos;
+  //
+  //             let insertPos = (prevInsertPos + nextInsertPos) / 2;
+  //             let insertedChar = text.slice(diffPos, diffPos + text.length - prevText.length);
+  //             ws.send(JSON.stringify({ type: 'insert', chars: insertedChar, pos: insertPos, userid: id, roomId: 'room1',}));
+  //
+  //         }
+  //
+  //         // If characters were deleted
+  //         else if (text.length < prevText.length) {
+  //             let deletePos = (diffPos + 1 < docData.length) ? docData[diffPos + 1].pos : docData[docData.length - 1].pos;
+  //             let deletedLength = prevText.length - text.length;
+  //             ws.send(JSON.stringify({ type: 'delete', pos: deletePos, length: deletedLength, roomId: 'room1', }));
+  //
+  // }
+
   const onChangeDoc = (value, delta, source) => {
     console.log(delta);
+    if (delta.ops[1]?.delete || delta.ops[0].delete) {
+      console.log('dlete');
+    } else if (delta.ops[0].retain) {
+      const diffPos = delta.ops[0].retain;
+      console.log(diffPos);
+      const prevInsertPos = docData[diffPos].pos;
+      console.log(prevInsertPos);
+      let nextInsertPos;
+      if (diffPos + 1 < docData.length) nextInsertPos = docData[diffPos + 1].pos;
+      else nextInsertPos = docData[docData.length - 1].pos;
+      console.log(nextInsertPos);
+      const insertPos = (prevInsertPos + nextInsertPos) / 2;
+      const insertedChar = delta.ops[1].insert;
+
+      ws.send(
+        JSON.stringify({
+          type: 'insert',
+          chars: insertedChar,
+          pos: insertPos,
+          userid: user.id,
+          roomId: 'room1',
+        })
+      );
+    }
   };
 
   const onChangeDocCursure = (range, oldRange, source) => {
