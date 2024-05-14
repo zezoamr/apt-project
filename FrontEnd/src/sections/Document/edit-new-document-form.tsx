@@ -1,4 +1,5 @@
 import * as Yup from 'yup';
+import 'quill/dist/quill.snow.css';
 import { useForm } from 'react-hook-form';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { useMemo, useEffect } from 'react';
@@ -7,24 +8,23 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
 // @mui
 
+import { Quill } from 'react-quill';
+
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { Card, CardHeader, CardContent } from '@mui/material';
 
 // routes
 import { useParams } from 'src/routes/hooks';
 
-import RHFEditor from 'src/components/hook-form/rhf-editor';
-
-// hooks
-
-// components
+import Editor from 'src/components/editor';
 
 // ----------------------------------------------------------------------
 
 type Props = {
   currentDocument?: { title: string; content: string } | null;
 };
-
+const Delta = Quill.import('delta');
 export default function DocsNewEditForm({ currentDocument }: Props) {
   const params = useParams();
 
@@ -67,10 +67,34 @@ export default function DocsNewEditForm({ currentDocument }: Props) {
       <Stack spacing={1.5}>
         <Typography variant="subtitle2">Title</Typography>
         <RHFTextField name="title" />
-      </Stack>
-      <Stack spacing={1.5}>
-        <Typography variant="subtitle2">Content</Typography>
-        <RHFEditor name="content" />
+        <Card>
+          <CardHeader title="Editor " />
+          <CardContent>
+            <Editor
+              id="full-editor"
+              defaultValue={new Delta()
+                .insert('Some ')
+                .insert('initial', { bold: true })
+                .insert(' ')
+                .insert('content', { italic: true })
+                .insert('\n')}
+              onChange={(value, delta, source) => {
+                console.log(value);
+                console.log(delta);
+                console.log(source);
+              }}
+              onChangeSelection={(range, oldRange, source) => {
+                if (range) {
+                  if (range.length === 0) {
+                    console.log('User cursor is on', range.index);
+                  }
+                } else {
+                  console.log('Cursor not in the editor');
+                }
+              }}
+            />
+          </CardContent>
+        </Card>
       </Stack>
     </FormProvider>
   );

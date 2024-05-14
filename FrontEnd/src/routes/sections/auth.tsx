@@ -36,7 +36,7 @@ const authJwt = {
       path: 'register',
       element: (
         <GuestGuard>
-          <AuthClassicLayout title="Manage Your Docs more effectively with Neojoy">
+          <AuthClassicLayout title="Manage Your Docs more effectively with NeoDocs">
             <JwtRegisterPage />
           </AuthClassicLayout>
         </GuestGuard>

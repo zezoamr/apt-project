@@ -31,7 +31,7 @@ export default function DocumentNewView() {
             variant="contained"
             startIcon={<Iconify icon="mingcute:add-line" />}
           >
-            Create Document
+            Share
           </Button>
         }
       />
