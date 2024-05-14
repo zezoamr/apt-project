@@ -31,17 +31,16 @@ class Document {
         this.last_operations = [];
     }
     
-    insert(char, position, userindex) {
+    insert(char, position, userindex, boldFlag, italicFlag) {
 
         //console.log("insert pos " + pos);
         let index = this.data.findIndex(item => item.pos >= position);
         
         let newPos =  position + userindex * 0.0001 + 0.0001;
         
-        this.data.splice(index, 0, {char: char, pos: newPos, deleteFlag: false, boldFlag: false, italicFlag: false});
+        this.data.splice(index, 0, {char: char, pos: newPos, deleteFlag: false, boldFlag: boldFlag, italicFlag: italicFlag});
         
-        this.operations.push({char: char, position: position, newPos: newPos, userindex: userindex, operation: 'insert'});
-
+        this.operations.push({char: char, position: position, newPos: newPos, userindex: userindex, operation: 'insert', boldFlag: boldFlag, italicFlag: italicFlag});
         //console.log(JSON.stringify(this.operations));
 
         //error here:
@@ -75,14 +74,14 @@ class Document {
         }
         
         // Create a copy of the base document data
-        const undoData = [{char: '', pos: 0, deleteFlag: false, boldFlag: false, italicFlag: false},
+        let undoData = [{char: '', pos: 0, deleteFlag: false, boldFlag: false, italicFlag: false},
         {char: '', pos: 1000000, deleteFlag: false, boldFlag: false, italicFlag: false}];
 
         // Apply all operations except the last one
         for (let i = 0; i < this.operations.length -1; i++) { 
             const op = this.operations[i];
             if (op.operation === 'insert') {
-                this.operation_insert(op.char, op.newPos, undoData);
+                this.operation_insert(op.char, op.newPos, op.boldFlag, op.italicFlag, undoData);
             } else if (op.operation === 'delete') {
                 this.operation_delete(op.pos, op.length, undoData);
             }
@@ -118,7 +117,7 @@ class Document {
         if (last_operation) {
             
             if (last_operation.operation === 'insert') {
-                this.operation_insert(last_operation.char, last_operation.newPos, this.data);
+                this.operation_insert(last_operation.char, last_operation.newPos, last_operation.boldFlag, last_operation.italicFlag,  this.data);
             } else if (last_operation.operation === 'delete') {
                 this.operation_delete(last_operation.pos, last_operation.length, this.data);
             }
@@ -143,7 +142,7 @@ class Document {
         for (let operation of operations) {
             //console.log(operation.operation);
             if (operation.operation === 'insert') {
-                this.operation_insert(operation.char, operation.newPos, this.data);
+                this.operation_insert(operation.char, operation.newPos, operation.boldFlag, operation.italicFlag, this.data);
             } else if (operation.operation === 'delete') {
                 this.operation_delete(operation.pos, operation.length, this.data);
             }
@@ -177,8 +176,8 @@ class Document {
         this.operations.push({start: pos, end: pos + length, length: length, operation: 'italic'});
     }
 
-    operation_insert(char, newPos,  baseData) {
-        baseData.push({ char: char, pos: newPos, deleteFlag: false });
+    operation_insert(char, newPos, boldFlag, italicFlag, baseData) {
+        baseData.push({ char: char, pos: newPos, boldFlag: boldFlag, italicFlag: italicFlag, deleteFlag: false });
     }
 
     operation_delete(pos, length, baseData) {
@@ -260,7 +259,13 @@ wss.on('connection', ws => {
             
             let userIndex = room.users.indexOf(operation.userid);
             //console.log("user index " + userIndex);
-            cursorShift = doc.insert(operation.chars, operation.pos, userIndex);
+            if(!operation.boldFlag) {
+                operation.boldFlag = false;
+            }
+            if(!operation.italicFlag) {
+                operation.italicFlag = false;
+            }
+            cursorShift = doc.insert(operation.chars, operation.pos, userIndex, operation.boldFlag, operation.italicFlag);
         } else if (operation.type === 'delete') {
             cursorShift = doc.delete(operation.pos, operation.length);
         } else if (operation.type === 'undo') {
@@ -291,19 +296,19 @@ wss.on('connection', ws => {
         // Broadcast the updated document and cursor shift to all connected clients
         wss.clients.forEach(client => {
             if (client === ws && client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({data: doc.data, cursorShift: 0, type: response_type})); //no need to update cursor at original
+                client.send(JSON.stringify({messageType: 'doc', data: doc.data, cursorShift: 0, type: response_type})); //no need to update cursor at original
             }
         });
 
         wss.clients.forEach(client => {
             if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({data: doc.data, cursorShift: cursorShift, type: response_type}));
+                client.send(JSON.stringify({messageType: 'doc', data: doc.data, cursorShift: cursorShift, type: response_type}));
             }
         });
         // Broadcast the updated cursor positions to all connected clients
         wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({cursorPositions: room.cursorPositions, type: response_type}));
+                client.send(JSON.stringify({messageType: 'cursor', cursorPositions: room.cursorPositions, type: response_type}));
             }
         });
     });
