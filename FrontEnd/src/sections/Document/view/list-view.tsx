@@ -30,10 +30,10 @@ export default function DocumentView() {
           action={
             <Button
               component={RouterLink}
+              href={paths.dashboard.new}
               color="primary"
               variant="contained"
               startIcon={<Iconify icon="mingcute:add-line" />}
-              herf={paths.dashboard.new}
             >
               Create Document
             </Button>
