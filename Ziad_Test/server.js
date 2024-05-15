@@ -278,7 +278,9 @@ wss.on('connection', ws => {
             doc.data = operation.newdata;
             cursorShift = 0;
         } else if (operation.type === 'loadOperations') {
+            console.log("before", operation.operations)
             doc.loadOperations(operation.operations);
+            console.log("after", doc.data)
             cursorShift = 0;
         }
         else if (operation.type === 'cursor') {
@@ -286,10 +288,11 @@ wss.on('connection', ws => {
             cursorShift = 0;
         }
         else if (operation.type === 'bold') {
-            doc.bold(); // Call bold method in Document class
+            doc.bold(operation.pos, operation.length); // Call bold method in Document class
             cursorShift = 0; // Set cursor shift if necessary
+            console.log(doc.data);
         } else if (operation.type === 'italic') {
-            doc.italic(); // Call italic method in Document class
+            doc.italic(operation.pos, operation.length); // Call italic method in Document class
             cursorShift = 0; // Set cursor shift if necessary
         }
 

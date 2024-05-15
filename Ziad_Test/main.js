@@ -162,6 +162,16 @@ const loadButton = document.getElementById('loadButton');
         ws.send(JSON.stringify({ type: 'load', operations: getOperationsFromServer() }));
 });
 
+const boldButton = document.getElementById('boldButton');
+    boldButton.addEventListener('click', () => {
+        ws.send(JSON.stringify({ type: 'bold' , pos :0 , length: 2}));
+});
+
+const italicButton = document.getElementById('italicButton');
+    italicButton.addEventListener('click', () => {
+        ws.send(JSON.stringify({ type: 'italic' , pos :0 , length: 2}));
+});
+
 function getOperationsFromServer() {
     //send docid recive doc operations from java server document
     loadSavedDoc();
@@ -201,10 +211,69 @@ function loadSavedDoc() {
         
     }   
 
+    const opsData = [
+        {
+          char: '',
+          pos: 0,
+          deleteFlag: false,
+          boldFlag: false,
+          italicFlag: false,
+        },
+        {
+          char: 'a',
+          pos: 500000.0003,
+          deleteFlag: false,
+          boldFlag: false,
+          italicFlag: false,
+        },
+        {
+          char: 's',
+          pos: 750000.0004499999,
+          deleteFlag: false,
+          boldFlag: false,
+          italicFlag: false,
+        },
+        {
+          char: 'd',
+          pos: 875000.0005249999,
+          deleteFlag: false,
+          boldFlag: false,
+          italicFlag: false,
+        },
+        {
+          char: 's',
+          pos: 937500.0005625,
+          deleteFlag: false,
+          boldFlag: false,
+          italicFlag: false,
+        },
+        {
+          char: 'v',
+          pos: 968750.00058125,
+          deleteFlag: false,
+          boldFlag: true,
+          italicFlag: false,
+        },
+        {
+          char: 'a',
+          pos: 984375.000590625,
+          deleteFlag: false,
+          boldFlag: true,
+          italicFlag: false,
+        },
+        {
+          char: '',
+          pos: 1000000,
+          deleteFlag: false,
+          boldFlag: true,
+          italicFlag: false,
+        },
+      ];
+
     newdata.sort((a, b) => a.pos - b.pos);
     docData = newdata;
-    //ws.send(JSON.stringify({type: 'loadData', newdata: newdata}));
-    ws.send(JSON.stringify({type: 'loadOperations', operations: trial_ops}));
+    ws.send(JSON.stringify({type: 'loadData', newdata: opsData}));
+    //ws.send(JSON.stringify({type: 'loadOperations', operations: trial_ops}));
 }
 
 // function getDocFromServer() {
