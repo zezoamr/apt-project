@@ -42,19 +42,20 @@ public class DocumentController {
         return documentService.createDocument(name, (User) authentication.getPrincipal());
     }
 
-    @PostMapping("/open/{name}")
+
+    @GetMapping("/open/{name}")
     @CrossOrigin(origins="*",allowedHeaders = "*")
     public Document openDocument(@PathVariable("name") String name, Authentication authentication){
         return documentService.openDocument(name, (User) authentication.getPrincipal());
     }
 
-    @PostMapping("/rename/{oldName}/{newName}")
+    @PutMapping("/rename/{oldName}/{newName}")
     @CrossOrigin(origins="*",allowedHeaders = "*")
     public Document renameDocument(@PathVariable("oldName") String oldName, @PathVariable("newName") String newName, Authentication authentication){
         return documentService.renameDocument(oldName, newName, (User) authentication.getPrincipal());
     }
 
-    @PostMapping("/delete/{name}")
+    @DeleteMapping("/delete/{name}")
     @CrossOrigin(origins="*",allowedHeaders = "*")
     public void deleteDocument(@PathVariable("name") String name, Authentication authentication){
         documentService.deleteDocument(name, (User) authentication.getPrincipal());
@@ -66,13 +67,13 @@ public class DocumentController {
         documentService.shareDocument(name, (User) authentication.getPrincipal(), userService.findByEmail(email), permission);
     }
 
-    @PostMapping("/changePermission/{name}/{email}/{permission}")
+    @PutMapping("/changePermission/{name}/{email}/{permission}")
     @CrossOrigin(origins="*",allowedHeaders = "*")
     public void changePermission(@PathVariable("name") String name, @PathVariable("email") String email, @PathVariable("permission") String permission, Authentication authentication){
         documentService.changePermission(name, (User) authentication.getPrincipal(), userService.findByEmail(email), permission);
     }
 
-    @PostMapping("/removePermission/{name}/{email}/{permission}")
+    @DeleteMapping("/removePermission/{name}/{email}/{permission}")
     @CrossOrigin(origins="*",allowedHeaders = "*")
     public void removePermission(@PathVariable("name") String name, @PathVariable("email") String email, @PathVariable("permission") String permission, Authentication authentication){
         documentService.removePermission(name, (User) authentication.getPrincipal(), userService.findByEmail(email), permission);
