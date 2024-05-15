@@ -31,4 +31,7 @@ export const endpoints = {
     login: 'api/v1/auth/login',
     register: 'api/v1/auth/signup',
   },
+  document : {
+    new: (name: string)=> (`api/v1/document/create/${name}`)
+  }
 };

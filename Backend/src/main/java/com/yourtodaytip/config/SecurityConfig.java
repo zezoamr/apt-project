@@ -65,6 +65,7 @@ public class SecurityConfig {
                 configurer
                         .requestMatchers( "/api/v1/me").hasRole("USER")
                         .requestMatchers( "/api/v1/users/**").hasRole("USER")
+                        .requestMatchers( "/api/v1/document/**").hasRole("USER")
                        // .requestMatchers( "/api/v1/test/admin").hasRole("ADMIN")  /api/v1/friends/request
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
                         .requestMatchers("/error").permitAll()
